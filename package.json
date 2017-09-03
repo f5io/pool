@@ -1,6 +1,6 @@
 {
   "name": "@paybase/pool",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "a pooling mechanism built on top of csp",
   "main": "index.js",
   "engines": {
