@@ -17,6 +17,6 @@
     "tape": "^4.8.0"
   },
   "dependencies": {
-    "@paybase/csp": "^0.10.1"
+    "@paybase/csp": "^0.10.2"
   }
 }
