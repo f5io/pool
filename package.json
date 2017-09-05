@@ -11,12 +11,12 @@
     "report": "nyc report --reporter=html"
   },
   "author": "Joe Harlow",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "nyc": "^11.1.0",
     "tape": "^4.8.0"
   },
   "dependencies": {
-    "@paybase/csp": "^0.10.2"
+    "@paybase/csp": "^1.0.0"
   }
 }
