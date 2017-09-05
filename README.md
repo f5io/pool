@@ -46,7 +46,7 @@ const { run, close } = createPool({
 })();
 ```
 
-![ping pong](/assets/pingpong.gif?raw=true)
+![request parallelisation](/assets/pool.request.gif?raw=true)
 
 #### Child process pooling
 
@@ -84,7 +84,7 @@ const { run, close } = createPool({
 })();
 ```
 
-![ping pong](/assets/pingpong.gif?raw=true)
+![child process pool](/assets/pool.spawn.gif?raw=true)
 
 ### API
 
