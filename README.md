@@ -18,11 +18,12 @@ $ yarn add @paybase/pool
 
 Pooling can simplify many complex problems, for example:
 
-##### Network I/O parallelisation
+#### Network I/O parallelisation
 
 By defining a process as something which is akin to a mutex lock, we can limit request parallelisation to the size of the pool.
 
 ```javascript
+const assert = require('assert');
 const fetch = require('node-fetch');
 const createPool = require('@paybase/pool');
 
@@ -47,11 +48,13 @@ const { run, close } = createPool({
 
 ![ping pong](/assets/pingpong.gif?raw=true)
 
-##### Child process pooling
+#### Child process pooling
 
 For spawning multiple child processes and spreading usage between the pool.
 
 ```javascript
+const assert = require('assert');
+const { spawn } = require('child_process');
 const createPool = require('@paybase/pool');
 
 const { run, close } = createPool({
@@ -97,8 +100,8 @@ The pool factory takes an options object containing 3 properties:
 
 A returned `Pool` exposes 2 methods:
 
-- `Pool.run(input)` -> `Promise` - The interface defined to run against the pool of processes
-- `Pool.close` -> `Promise` - A mechanism for destroying the `pool` when it is no longer needed.
+- `Pool.run(input)` -> `Promise` - The interface defined to run against the pool of processes, supplied input can be of any type as the handler supplied at `pool` creation defines how the input interacts which the underlying process
+- `Pool.close` -> `Promise` - A mechanism for destroying the `pool` when it is no longer needed
 
 ### Contributions
 
