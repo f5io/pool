@@ -1,8 +1,10 @@
 # @paybase/pool
 
-`async/await` pooling mechanism built on top of Communicating Sequential Processes.
+A highly flexible process pooling library for Node.js. Built with [@paybase/csp](https://github.com/paybase/csp).
 
-### Installation
+[![npm version](https://badge.fury.io/js/%40paybase%2Fpool.svg)](https://badge.fury.io/js/%40paybase%2Fpool)
+
+## Installation
 
 ```
 $ npm install --save @paybase/pool
@@ -14,13 +16,28 @@ or
 $ yarn add @paybase/pool
 ```
 
-### Example Usage
+## API
 
-Pooling can simplify many complex problems, for example:
+This library exposes a single factory method for creating pools.
 
-#### Network I/O parallelisation
+### `createPool({ poolSize = 5, createProcess, handler })` -> `Pool`
 
-By defining a process as something which is akin to a mutex lock, we can limit request parallelisation to the size of the pool.
+The pool factory takes an options object containing 3 properties:
+
+- `poolSize` - defaults to 5, determines the size of the pool
+- `createProcess` - defines a `process` factory function which can return anything
+- `handler(process, input)` -> `Promise` - defines a function which handles a unit of work. The handler must return a `Promise` and receives a `process` (as defined by the `process` factory) and the `input` from a call to `run` on the pool
+
+A returned `Pool` exposes 2 methods:
+
+- `Pool.run(input)` -> `Promise` - The interface defined to run against the pool of processes, supplied input can be of any type as the handler supplied at `pool` creation defines how the input interacts which the underlying process
+- `Pool.close` -> `Promise` - A mechanism for destroying the `pool` when it is no longer needed
+
+## Example Usage
+
+### Network I/O parallelisation
+
+By defining our process as a plain `Symbol`, or `true` for that matter, we can limit request parallelisation to the size of the pool.
 
 ```javascript
 const assert = require('assert');
@@ -29,7 +46,7 @@ const createPool = require('@paybase/pool');
 
 const { run, close } = createPool({
   poolSize: 2,
-  createProcess: () => Symbol('ticket'),
+  createProcess: () => Symbol('process'),
   handler: (_, query) => {
     console.log(`🚀  running request with query: ${query}`);
     return fetch(`https://postman-echo.com/get?q=${query}`)
@@ -48,9 +65,9 @@ const { run, close } = createPool({
 
 ![request parallelisation](/assets/pool.request.gif?raw=true)
 
-#### Child process pooling
+### Child process pooling
 
-For spawning multiple child processes and spreading usage between the pool.
+For spawning multiple child processes and spreading work across processes in the pool.
 
 ```javascript
 const assert = require('assert');
@@ -86,24 +103,7 @@ const { run, close } = createPool({
 
 ![child process pool](/assets/pool.spawn.gif?raw=true)
 
-### API
-
-This library exposes a single factory method for creating pools.
-
-##### `createPool({ poolSize = 5, createProcess, handler })` -> `Pool`
-
-The pool factory takes an options object containing 3 properties:
-
-- `poolSize` - defaults to 5, determines the size of the pool
-- `createProcess` - defines a `process` factory function which can return anything
-- `handler(process, input)` -> `Promise` - defines a function which handles a unit of work. The handler must return a `Promise` and receives a `process` (as defined by the `process` factory) and the `input` from a call to `run` on the pool
-
-A returned `Pool` exposes 2 methods:
-
-- `Pool.run(input)` -> `Promise` - The interface defined to run against the pool of processes, supplied input can be of any type as the handler supplied at `pool` creation defines how the input interacts which the underlying process
-- `Pool.close` -> `Promise` - A mechanism for destroying the `pool` when it is no longer needed
-
-### Contributions
+## Contributions
 
 Contributions are welcomed and appreciated!
 
@@ -113,6 +113,6 @@ Contributions are welcomed and appreciated!
 
 Feel free to get in touch if you have any questions.
 
-### License
+## License
 
 Please see the `LICENSE` file for more information.
