@@ -69,6 +69,17 @@ test('[pool] async pool', async t => {
   t.end();
 });
 
+test('[pool] async process creation error handler', async t => {
+  const err = new Error('foo');
+  const pool = await createPool({
+    createAsyncProcess: () => Promise.reject(err),
+    handler: x => x,
+  }).catch(e => {
+    t.equal(err, e, 'should throw the correct error');
+    t.end();
+  });
+});
+
 test('[pool] async error handler', async t => {
   const err = new Error('foo');
   const { run, close } = await createPool({
