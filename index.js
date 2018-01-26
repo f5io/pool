@@ -28,7 +28,11 @@ const createPool = ({
         reject(err);
         try { p.kill() } catch(e) {}
         p = null;
-        put(processPool, createProcess());
+        if (createProcess) {
+          put(processPool, createProcess());
+        } else {
+          createAsyncProcess().then(p => put(processPool, p));
+        }
       }
     });
 

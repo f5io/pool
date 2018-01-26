@@ -69,6 +69,18 @@ test('[pool] async pool', async t => {
   t.end();
 });
 
+test('[pool] async error handler', async t => {
+  const err = new Error('foo');
+  const { run, close } = await createPool({
+    createAsyncProcess: () => new Promise(resolve => setTimeout(resolve, 10)),
+    handler: () => Promise.reject(err),
+  });
+  run('bar').catch(e => {
+    t.equal(err, e, 'should throw the correct error');
+    t.end();
+  });
+});
+
 test('[pool] erroring handler', t => {
   const err = new Error('foo');
   const { run, close } = createPool({
