@@ -56,6 +56,19 @@ test('[pool] supplied args', async t => {
   t.end();
 });
 
+test('[pool] async pool', async t => {
+  const { run, close } = await createPool({
+    poolSize: 10,
+    createAsyncProcess: () => new Promise(resolve => setTimeout(resolve, 10)),
+    handler: (_, x) => Promise.resolve(x**2),
+  });
+  const inputs = Array(10).fill(0).map(msg);
+  const expected = inputs.map(x => x**2);
+  const result = await Promise.all(inputs.map(x => run(x)));
+  t.deepEqual(expected, result, 'should return the correct results');
+  t.end();
+});
+
 test('[pool] erroring handler', t => {
   const err = new Error('foo');
   const { run, close } = createPool({
