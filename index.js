@@ -1,14 +1,21 @@
 const { channel, put, take, drain } = require('@paybase/csp');
 
+const isFunction = x => typeof x === 'function';
+
 const createPool = ({
   poolSize = 5,
-  createProcess = () => {},
+  createProcess,
+  createAsyncProcess,
   handler = (_, x) => Promise.resolve(x),
 } = {}) => {
+  const pool = Array(poolSize).fill(0);
   const processPool = channel();
   
-  Array(poolSize).fill(0)
-    .forEach(() => put(processPool, createProcess()));
+  if (!isFunction(createProcess) && !isFunction(createAsyncProcess))
+    throw new Error(`Please provide a process creator`);
+
+  if (isFunction(createProcess) && isFunction(createAsyncProcess))
+    throw new Error(`Unable to create both a sync pool and an async pool, please choose one!`);
 
   const run = (value) =>
     new Promise(async (resolve, reject) => {
@@ -33,7 +40,15 @@ const createPool = ({
     });
   };
 
-  return { run, close };
+  if (createProcess) {
+    pool.forEach(() => put(processPool, createProcess()));
+    return { run, close };
+  } else {
+    return Promise.all(pool.map(() => createAsyncProcess()))
+      .then(ps => ps.forEach(p => put(processPool, p)))
+      .then(() => ({ run, close }));
+  }
+
 };
 
 exports.createPool = createPool;

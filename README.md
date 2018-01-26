@@ -20,13 +20,16 @@ $ yarn add @paybase/pool
 
 This library exposes a single factory method for creating pools.
 
-### `createPool({ poolSize = 5, createProcess, handler })` -> `Pool`
+### `createPool({ poolSize = 5, createProcess, createAsyncProcess, handler })` -> `Pool|Promise<Pool>`
 
-The pool factory takes an options object containing 3 properties:
+The pool factory takes an options object containing 3 of 4 properties:
 
 - `poolSize` - defaults to 5, determines the size of the pool
 - `createProcess` - defines a `process` factory function which can return anything
+- `createAsyncProcess` - defines an async `process` factory which can return anything, useful if your process requires time to become active.
 - `handler(process, input)` -> `Promise` - defines a function which handles a unit of work. The handler must return a `Promise` and receives a `process` (as defined by the `process` factory) and the `input` from a call to `run` on the pool
+
+You must supply only one of `createProcess` or `createAsyncProcess`! If you supply `createAsyncProcess` the return value of the `createPool` factory will be a `Promise<Pool>`.
 
 A returned `Pool` exposes 2 methods:
 
