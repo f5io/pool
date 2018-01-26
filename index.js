@@ -16,6 +16,21 @@ const createPool = ({
 
   if (isFunction(createProcess) && isFunction(createAsyncProcess))
     throw new Error(`Unable to create both a sync pool and an async pool, please choose one!`);
+  
+  const inflight = [];
+  const spawnAsyncProcess = () => {
+    const proc = createAsyncProcess();
+    inflight.push(proc);
+    return Promise.resolve(proc)
+      .then(p => {
+        inflight.splice(inflight.indexOf(proc), 1);
+        put(processPool, p);
+      })
+      .catch(e => {
+        inflight.splice(inflight.indexOf(proc), 1);
+        throw e;
+      });
+  };
 
   const run = (value) =>
     new Promise(async (resolve, reject) => {
@@ -31,12 +46,13 @@ const createPool = ({
         if (createProcess) {
           put(processPool, createProcess());
         } else {
-          createAsyncProcess().then(p => put(processPool, p));
+          spawnAsyncProcess();
         }
       }
     });
 
   const close = async () => {
+    await Promise.all(inflight);
     const procs = await drain(processPool);
     procs.forEach(p => {
       try { p.kill() } catch(e) {}
@@ -48,9 +64,12 @@ const createPool = ({
     pool.forEach(() => put(processPool, createProcess()));
     return { run, close };
   } else {
-    return Promise.all(pool.map(() => createAsyncProcess()))
-      .then(ps => ps.forEach(p => put(processPool, p)))
-      .then(() => ({ run, close }));
+    return Promise.race(pool.map(() => spawnAsyncProcess()))
+      .then(() => ({ run, close }))
+      .catch(err => {
+        close();
+        throw err;
+      });
   }
 
 };
