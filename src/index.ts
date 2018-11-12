@@ -4,36 +4,43 @@ function isFunction(x: any): Boolean{
   return typeof x === 'function'
 }
 
-export type PoolOptions<Input, Output> = {
+export type PoolOptions<I, O> = {
   poolSize?: number;
-  handler?: (process: any, msg: Input) => Promise<Output>;
+  handler?: (process: any, msg: I) => Promise<O>;
 };
 
-export type SyncProcess<Process> = {
-  createProcess: () => Process;
+export type SyncProcess<P> = {
+  createProcess: () => P;
 };
 
-export type AsyncProcess<Process> = {
-  createAsyncProcess: () => Promise<Process>;
+export type AsyncProcess<P> = {
+  createAsyncProcess: () => Promise<P>;
 }
 
-export type Pool<Input, Output> = {
-  run: (value?: Input) => Promise<Output>;
+export type Pool<I, O> = {
+  run: (value?: I) => Promise<O>;
   close: () => Promise<void>;
 }
 
-function createPool<Input, Output, Process>(opts: PoolOptions<Input, Output> & SyncProcess<Process>): Pool<Input, Output>;
-function createPool<Input, Output, Process>(opts: PoolOptions<Input, Output> & AsyncProcess<Process>): Promise<Pool<Input, Output>>;
-function createPool<Input, Output, Process>(opts: any = {}) {
+
+function createPool<I, O, P>(opts: PoolOptions<I, O> & P): Pool<I, O> | Promise<Pool<I, O>> {
+
   const {
     poolSize = 5,
-    handler = (_: Process, x: Input) => Promise.resolve(x as any),
-    createProcess,
-    createAsyncProcess
-  } = opts;
+    handler = (_: P, x: I) => Promise.resolve(x as any),
+  } = opts || {};
+
+  const {
+    createProcess = undefined
+  } = (opts as unknown as SyncProcess<any>) || {};
+
+  const {
+    createAsyncProcess = undefined
+  } = (opts as unknown as AsyncProcess<any>) || {};
+  
 
   const pool: number[] = Array(poolSize).fill(0);
-  const processPool = channel<Process>();
+  const processPool = channel<P>();
 
   if (!isFunction(createProcess) && !isFunction(createAsyncProcess))
     throw new Error(`Please provide a process creator`);
@@ -56,12 +63,12 @@ function createPool<Input, Output, Process>(opts: any = {}) {
       });
   };
 
-  function run(value?: Input): Promise<any>{
+  function run(value?: I): Promise<any>{
     return new Promise(async (resolve, reject) => {
       let p: any = await take(processPool);
       try {
         const result = await handler(p, value);
-        resolve(result as Output);
+        resolve(result as O);
         put(processPool, p);
       } catch(err) {
         reject(err);
