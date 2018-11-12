@@ -28,7 +28,7 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
   const opts = options || {};
   const {
     poolSize = 5,
-    handler = (_: P, x: I) => Promise.resolve(x as any),
+    handler = (_: P, x: I) => Promise.resolve(x as any as O),
   } = (opts as PoolOptions<I, O, P>);
 
   const { createProcess } = (opts as SyncProcess<P>);
@@ -44,7 +44,7 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
   if (isFunction(createProcess) && isFunction(createAsyncProcess))
     throw new Error(`Unable to create both a sync pool and an async pool, please choose one!`);
   
-  const inflight: any[] = [];
+  const inflight: Promise<P>[] = [];
   function spawnAsyncProcess(): Promise<void> {
     const proc = createAsyncProcess();
     inflight.push(proc);
@@ -59,12 +59,12 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
       });
   };
 
-  function run(value?: I): Promise<any>{
+  function run(value?: I): Promise<O> {
     return new Promise(async (resolve, reject) => {
       let p = await take(processPool);
       try {
         const result = await handler(p, value);
-        resolve(result as O);
+        resolve(result);
         put(processPool, p);
       } catch(err) {
         reject(err);
@@ -90,14 +90,14 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
 
   if (createProcess) {
     pool.forEach(() => put(processPool, createProcess()));
-    return { run, close } as Pool<I, O>;
+    return { run, close };
   } else {
     return Promise.race(pool.map(() => spawnAsyncProcess()))
       .then(() => ({ run, close }))
       .catch(err => {
         close();
         throw err;
-      }) as Promise<Pool<I, O>>;
+      });
   }
 
 };
