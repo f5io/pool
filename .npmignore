@@ -2,3 +2,5 @@
 ci/
 coverage/
 test/
+.circleci
+src/

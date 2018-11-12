@@ -1,5 +1,5 @@
-const test = require('tape');
-const createPool = require('../');
+import * as test from 'tape';
+import createPool from '../src';
 
 const msg = (() => {
   let i = 0;
@@ -7,15 +7,17 @@ const msg = (() => {
 })();
 
 test('[pool] errors', t => {
+  // @ts-ignore
   const errorNoFn = () => createPool();
-  const errorBothFn = () => createPool({ createProcess: () => {}, createAsyncProcess: () => {} });
+  // @ts-ignore
+  const errorBothFn = () => createPool({ createProcess: () => {}, createAsyncProcess: () => Promise.resolve() });
   t.throws(errorNoFn, /Please provide a process creator/, 'should throw expected error');
   t.throws(errorBothFn, /Unable to create both a sync pool and an async pool, please choose one!/, 'should throw expected error');
   t.end();
 });
 
 test('[pool] return values sync', t => {
-  const { run, close } = createPool({ createProcess: () => {} });
+  const { run, close } = createPool<undefined, undefined, void>({ createProcess: () => {} });
   const runRes = run();
   const closeRes = close();
   t.ok(runRes instanceof Promise, 'should return an instance of a Promise');
@@ -24,7 +26,7 @@ test('[pool] return values sync', t => {
 });
 
 test('[pool] return values async', t => {
-  const pool = createPool({ createAsyncProcess: () => {} });
+  const pool = createPool({ createAsyncProcess: () => Promise.resolve() });
   t.ok(pool instanceof Promise, 'should return an instance of a Promise');
   pool.then(({ run, close }) => {
     const runRes = run();
@@ -36,7 +38,7 @@ test('[pool] return values async', t => {
 });
 
 test('[pool] default args', async t => {
-  const { run, close } = createPool({ createProcess: () => {} });
+  const { run } = createPool({ createProcess: () => {} });
   const inputs = Array(10).fill(0).map(msg);
   const result = await Promise.all(inputs.map(x => run(x)));
   t.deepEqual(inputs, result, 'should return the correct results');
@@ -44,10 +46,10 @@ test('[pool] default args', async t => {
 });
 
 test('[pool] supplied args', async t => {
-  const { run, close } = createPool({
+  const { run } = createPool<number, number, number>({
     poolSize: 10,
-    createProcess: x => x,
-    handler: (_, x) => Promise.resolve(x**2),
+    createProcess: () => 1,
+    handler: (_, x: number) => Promise.resolve(x ** 2),
   });
   const inputs = Array(10).fill(0).map(msg);
   const expected = inputs.map(x => x**2);
@@ -57,9 +59,9 @@ test('[pool] supplied args', async t => {
 });
 
 test('[pool] async pool', async t => {
-  const { run, close } = await createPool({
+  const { run } = await createPool<number, number, void>({
     poolSize: 10,
-    createAsyncProcess: () => new Promise(resolve => setTimeout(resolve, 10)),
+    createAsyncProcess: () => new Promise<void>(resolve => setTimeout(resolve, 10)),
     handler: (_, x) => Promise.resolve(x**2),
   });
   const inputs = Array(10).fill(0).map(msg);
@@ -71,7 +73,7 @@ test('[pool] async pool', async t => {
 
 test('[pool] async process creation error handler', async t => {
   const err = new Error('foo');
-  const pool = await createPool({
+  await createPool<object, object, object>({
     createAsyncProcess: () => Promise.reject(err),
     handler: x => x,
   }).catch(e => {
@@ -82,7 +84,7 @@ test('[pool] async process creation error handler', async t => {
 
 test('[pool] async error handler', async t => {
   const err = new Error('foo');
-  const { run, close } = await createPool({
+  const { run } = await createPool({
     createAsyncProcess: () => new Promise(resolve => setTimeout(resolve, 10)),
     handler: () => Promise.reject(err),
   });
@@ -94,7 +96,7 @@ test('[pool] async error handler', async t => {
 
 test('[pool] erroring handler', t => {
   const err = new Error('foo');
-  const { run, close } = createPool({
+  const { run } = createPool({
     createProcess: () => {},
     handler: () => Promise.reject(err),
   });
