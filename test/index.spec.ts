@@ -7,9 +7,8 @@ const msg = (() => {
 })();
 
 test('[pool] errors', t => {
-  // @ts-ignore
   const errorNoFn = () => createPool();
-  // @ts-ignore
+  //@ts-ignore
   const errorBothFn = () => createPool({ createProcess: () => {}, createAsyncProcess: () => Promise.resolve() });
   t.throws(errorNoFn, /Please provide a process creator/, 'should throw expected error');
   t.throws(errorBothFn, /Unable to create both a sync pool and an async pool, please choose one!/, 'should throw expected error');
@@ -63,7 +62,7 @@ test('[pool] async pool', async t => {
     poolSize: 10,
     createAsyncProcess: () => new Promise<void>(resolve => setTimeout(resolve, 10)),
     handler: (_, x) => Promise.resolve(x**2),
-  });
+  })
   const inputs = Array(10).fill(0).map(msg);
   const expected = inputs.map(x => x**2);
   const result = await Promise.all(inputs.map(x => run(x)));
@@ -71,9 +70,9 @@ test('[pool] async pool', async t => {
   t.end();
 });
 
-test('[pool] async process creation error handler', async t => {
+test('[pool] async process creation error handler', t => {
   const err = new Error('foo');
-  await createPool<object, object, object>({
+  createPool<object, object, never>({
     createAsyncProcess: () => Promise.reject(err),
     handler: x => x,
   }).catch(e => {
@@ -105,5 +104,36 @@ test('[pool] erroring handler', t => {
     t.end();
   });
 });
+
+test('[pool] type test', async t => {
+  t.plan(4);
+  type Process = {
+    increment: (x: number) => number;
+    kill: () => void;
+  };
+
+  type Input = {
+    a: number;
+  };
+
+  type Output = number;
+
+  const { run, close } = createPool<Input, Output, Process>({
+    poolSize: 3,
+    handler: (p, { a }) => Promise.resolve(p.increment(a)),
+    createProcess: () => ({
+      increment: (x: number) => x + 1,
+      kill: () => {
+        t.ok('should close');
+      }
+    })
+  })
+
+  const result = await run({ a: 7 });
+  t.equals(result, 8);
+
+  close();
+
+})
 
 

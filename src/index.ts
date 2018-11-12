@@ -9,10 +9,6 @@ export type PoolOptions<I, O, P> = {
   handler?: (process: P, msg: I) => Promise<O>;
 };
 
-export interface Process {
-  kill?: () => void;
-}
-
 export type SyncProcess<P> = {
   createProcess: () => P;
 };
@@ -26,22 +22,18 @@ export type Pool<I, O> = {
   close: () => Promise<void>;
 }
 
-
-function createPool<I, O, P>(opts: PoolOptions<I, O, P>): Pool<I, O> | Promise<Pool<I, O>> {
-
+function createPool<I, O, P>(options?: PoolOptions<I, O, P> & SyncProcess<P>): Pool<I, O>;
+function createPool<I, O, P>(options?: PoolOptions<I, O, P> & AsyncProcess<P>): Promise<Pool<I, O>>;
+function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | AsyncProcess<P>)): Promise<Pool<I, O>> | Pool<I, O> {
+  const opts = options || {};
   const {
     poolSize = 5,
     handler = (_: P, x: I) => Promise.resolve(x as any),
-  } = opts || {};
+  } = (opts as PoolOptions<I, O, P>);
 
-  const {
-    createProcess = undefined
-  } = (opts as unknown as SyncProcess<P>) || {};
+  const { createProcess } = (opts as SyncProcess<P>);
 
-  const {
-    createAsyncProcess = undefined
-  } = (opts as unknown as AsyncProcess<P>) || {};
-  
+  const { createAsyncProcess } = (opts as AsyncProcess<P>);
 
   const pool = Array(poolSize).fill(0);
   const processPool = channel<P>();
@@ -76,7 +68,7 @@ function createPool<I, O, P>(opts: PoolOptions<I, O, P>): Pool<I, O> | Promise<P
         put(processPool, p);
       } catch(err) {
         reject(err);
-        try { (p as Process).kill() } catch(e) {}
+        try { (p as { kill?: () => void }).kill() } catch(e) {}
         p = null;
         if (createProcess) {
           put(processPool, createProcess());
@@ -91,21 +83,21 @@ function createPool<I, O, P>(opts: PoolOptions<I, O, P>): Pool<I, O> | Promise<P
     await Promise.all(inflight);
     const procs = await drain(processPool);
     procs.forEach(p => {
-      try { (p as Process).kill() } catch(e) {}
+      try { (p as { kill?: () => void }).kill() } catch(e) {}
       p = null;
     });
   };
 
   if (createProcess) {
     pool.forEach(() => put(processPool, createProcess()));
-    return { run, close };
+    return { run, close } as Pool<I, O>;
   } else {
     return Promise.race(pool.map(() => spawnAsyncProcess()))
       .then(() => ({ run, close }))
       .catch(err => {
         close();
         throw err;
-      });
+      }) as Promise<Pool<I, O>>;
   }
 
 };
