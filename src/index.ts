@@ -4,10 +4,14 @@ function isFunction(x: any): Boolean{
   return typeof x === 'function'
 }
 
-export type PoolOptions<I, O> = {
+export type PoolOptions<I, O, P> = {
   poolSize?: number;
-  handler?: (process: any, msg: I) => Promise<O>;
+  handler?: (process: P, msg: I) => Promise<O>;
 };
+
+export interface Process {
+  kill?: () => void;
+}
 
 export type SyncProcess<P> = {
   createProcess: () => P;
@@ -23,7 +27,7 @@ export type Pool<I, O> = {
 }
 
 
-function createPool<I, O, P>(opts: PoolOptions<I, O> & P): Pool<I, O> | Promise<Pool<I, O>> {
+function createPool<I, O, P>(opts: PoolOptions<I, O, P>): Pool<I, O> | Promise<Pool<I, O>> {
 
   const {
     poolSize = 5,
@@ -32,14 +36,14 @@ function createPool<I, O, P>(opts: PoolOptions<I, O> & P): Pool<I, O> | Promise<
 
   const {
     createProcess = undefined
-  } = (opts as unknown as SyncProcess<any>) || {};
+  } = (opts as unknown as SyncProcess<P>) || {};
 
   const {
     createAsyncProcess = undefined
-  } = (opts as unknown as AsyncProcess<any>) || {};
+  } = (opts as unknown as AsyncProcess<P>) || {};
   
 
-  const pool: number[] = Array(poolSize).fill(0);
+  const pool = Array(poolSize).fill(0);
   const processPool = channel<P>();
 
   if (!isFunction(createProcess) && !isFunction(createAsyncProcess))
@@ -65,14 +69,14 @@ function createPool<I, O, P>(opts: PoolOptions<I, O> & P): Pool<I, O> | Promise<
 
   function run(value?: I): Promise<any>{
     return new Promise(async (resolve, reject) => {
-      let p: any = await take(processPool);
+      let p = await take(processPool);
       try {
         const result = await handler(p, value);
         resolve(result as O);
         put(processPool, p);
       } catch(err) {
         reject(err);
-        try { p.kill() } catch(e) {}
+        try { (p as Process).kill() } catch(e) {}
         p = null;
         if (createProcess) {
           put(processPool, createProcess());
@@ -86,8 +90,8 @@ function createPool<I, O, P>(opts: PoolOptions<I, O> & P): Pool<I, O> | Promise<
   async function close(): Promise<void> {
     await Promise.all(inflight);
     const procs = await drain(processPool);
-    procs.forEach((p: any) => {
-      try { p.kill() } catch(e) {}
+    procs.forEach(p => {
+      try { (p as Process).kill() } catch(e) {}
       p = null;
     });
   };
