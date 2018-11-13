@@ -1,7 +1,7 @@
 import { channel, put, take, drain } from '@paybase/csp';
 
-function isFunction(x: any): Boolean{
-  return typeof x === 'function'
+function isFunction(x: any): boolean {
+  return typeof x === 'function';
 }
 
 export type PoolOptions<I, O, P> = {
@@ -15,12 +15,12 @@ export type SyncProcess<P> = {
 
 export type AsyncProcess<P> = {
   createAsyncProcess: () => Promise<P>;
-}
+};
 
 export type Pool<I, O> = {
   run: (value?: I) => Promise<O>;
   close: () => Promise<void>;
-}
+};
 
 function createPool<I, O, P>(options?: PoolOptions<I, O, P> & SyncProcess<P>): Pool<I, O>;
 function createPool<I, O, P>(options?: PoolOptions<I, O, P> & AsyncProcess<P>): Promise<Pool<I, O>>;
@@ -39,11 +39,11 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
   const processPool = channel<P>();
 
   if (!isFunction(createProcess) && !isFunction(createAsyncProcess))
-    throw new Error(`Please provide a process creator`);
+    throw new Error('Please provide a process creator');
 
   if (isFunction(createProcess) && isFunction(createAsyncProcess))
-    throw new Error(`Unable to create both a sync pool and an async pool, please choose one!`);
-  
+    throw new Error('Unable to create both a sync pool and an async pool, please choose one!');
+
   const inflight: Promise<P>[] = [];
   function spawnAsyncProcess(): Promise<void> {
     const proc = createAsyncProcess();
@@ -57,7 +57,7 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
         inflight.splice(inflight.indexOf(proc), 1);
         throw e;
       });
-  };
+  }
 
   function run(value?: I): Promise<O> {
     return new Promise(async (resolve, reject) => {
@@ -68,7 +68,7 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
         put(processPool, p);
       } catch(err) {
         reject(err);
-        try { (p as { kill?: () => void }).kill() } catch(e) {}
+        try { (p as { kill?: () => void }).kill(); } catch(e) {}
         p = null;
         if (createProcess) {
           put(processPool, createProcess());
@@ -83,10 +83,10 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
     await Promise.all(inflight);
     const procs = await drain(processPool);
     procs.forEach(p => {
-      try { (p as { kill?: () => void }).kill() } catch(e) {}
+      try { (p as { kill?: () => void }).kill(); } catch(e) {}
       p = null;
     });
-  };
+  }
 
   if (createProcess) {
     pool.forEach(() => put(processPool, createProcess()));
@@ -100,7 +100,7 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
       });
   }
 
-};
+}
 
-export { createPool };
 export default createPool;
+module.exports = createPool;
