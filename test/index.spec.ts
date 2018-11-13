@@ -1,5 +1,5 @@
 import * as test from 'tape';
-import createPool from '../src';
+import * as createPool from '../src';
 
 const msg = (() => {
   let i = 0;
@@ -135,5 +135,3 @@ test('[pool] type test', async t => {
   close();
 
 })
-
-

@@ -2,8 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "lib": ["es2018"],
-    "module": "None",
-    "moduleResolution": "Node",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "target": "ES2017",
     "preserveConstEnums": true,
     "noUnusedLocals": true,
