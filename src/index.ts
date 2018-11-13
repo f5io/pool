@@ -104,3 +104,4 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
 
 export default createPool;
 module.exports = createPool;
+createPool.default = createPool;
