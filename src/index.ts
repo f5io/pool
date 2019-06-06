@@ -7,20 +7,20 @@ function isFunction(x: any): boolean {
 export type PoolOptions<I, O, P> = {
   poolSize?: number;
   handler?: (process: P, msg: I) => Promise<O>;
-};
+}
 
 export type SyncProcess<P> = {
   createProcess: () => P;
-};
+}
 
 export type AsyncProcess<P> = {
   createAsyncProcess: () => Promise<P>;
-};
+}
 
 export type Pool<I, O> = {
   run: (value?: I) => Promise<O>;
   close: () => Promise<void>;
-};
+}
 
 function createPool<I, O, P>(options?: PoolOptions<I, O, P> & SyncProcess<P>): Pool<I, O>;
 function createPool<I, O, P>(options?: PoolOptions<I, O, P> & AsyncProcess<P>): Promise<Pool<I, O>>;
@@ -68,7 +68,7 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
         put(processPool, p);
       } catch(err) {
         reject(err);
-        try { (p as { kill?: () => void }).kill(); } catch(e) {}
+        try { (p as { kill?: () => void }).kill(); } catch(e) {} // eslint-disable-line no-empty
         p = null;
         if (createProcess) {
           put(processPool, createProcess());
@@ -83,7 +83,7 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
     await Promise.all(inflight);
     const procs = await drain(processPool);
     procs.forEach(p => {
-      try { (p as { kill?: () => void }).kill(); } catch(e) {}
+      try { (p as { kill?: () => void }).kill(); } catch(e) {} // eslint-disable-line no-empty
       p = null;
     });
   }
@@ -99,7 +99,6 @@ function createPool<I, O, P>(options?: PoolOptions<I, O, P> & (SyncProcess<P> | 
         throw err;
       });
   }
-
 }
 
 export default createPool;
