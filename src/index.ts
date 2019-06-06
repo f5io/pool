@@ -4,20 +4,20 @@ function isFunction(x: any): boolean {
   return typeof x === 'function';
 }
 
-export interface PoolOptions<I, O, P> {
+export type PoolOptions<I, O, P> = {
   poolSize?: number;
   handler?: (process: P, msg: I) => Promise<O>;
 }
 
-export interface SyncProcess<P> {
+export type SyncProcess<P> = {
   createProcess: () => P;
 }
 
-export interface AsyncProcess<P> {
+export type AsyncProcess<P> = {
   createAsyncProcess: () => Promise<P>;
 }
 
-export interface Pool<I, O> {
+export type Pool<I, O> = {
   run: (value?: I) => Promise<O>;
   close: () => Promise<void>;
 }
