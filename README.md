@@ -1,19 +1,19 @@
-# @paybase/pool
+# @f5io/pool
 
-A highly flexible process pooling library for Node.js. Built with [@paybase/csp](https://github.com/paybase/csp).
+A highly flexible process pooling library for Node.js. Built with [@f5io/csp](https://github.com/f5io/csp).
 
-[![npm version](https://badge.fury.io/js/%40paybase%2Fpool.svg)](https://badge.fury.io/js/%40paybase%2Fpool)
+[![npm version](https://badge.fury.io/js/%40f5io%2Fpool.svg)](https://badge.fury.io/js/%40f5io%2Fpool)
 
 ## Installation
 
 ```
-$ npm install --save @paybase/pool
+$ npm install --save @f5io/pool
 ```
 
 or
 
 ```
-$ yarn add @paybase/pool
+$ yarn add @f5io/pool
 ```
 
 ## API
@@ -45,7 +45,7 @@ By defining our process as a plain `Symbol`, or `true` for that matter, we can l
 ```javascript
 const assert = require('assert');
 const fetch = require('node-fetch');
-const createPool = require('@paybase/pool');
+const createPool = require('@f5io/pool');
 
 const { run, close } = createPool({
   poolSize: 2,
@@ -75,7 +75,7 @@ For spawning multiple child processes and spreading work across processes in the
 ```javascript
 const assert = require('assert');
 const { spawn } = require('child_process');
-const createPool = require('@paybase/pool');
+const createPool = require('@f5io/pool');
 
 const { run, close } = createPool({
   poolSize: 10,
