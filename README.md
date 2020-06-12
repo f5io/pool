@@ -54,7 +54,7 @@ const { run, close } = createPool({
     console.log(`🚀  running request with query: ${query}`);
     return fetch(`https://postman-echo.com/get?q=${query}`)
       .then(res => res.json())
-      .then(res => assert.equal(res.args.q, query));
+      .then(res => assert.equal(res.args.q, query))
       .then(_ => console.log(`👌  request completed successfully`));
   }
 });
